@@ -46,6 +46,7 @@ yang2jstype = (schema) ->
 yang2jsobj = (schema) ->
   return {} unless schema?
   #debug? "[#{schema.trail}] converting schema to JSON-schema"
+  origin = schema.root.tag
   js =
    description: schema.description?.tag
   required = []
@@ -64,13 +65,13 @@ yang2jsobj = (schema) ->
   switch
     when refs?.length
       refs.forEach (ref) ->
-        unless definitions[ref.tag]?
-          debug? "[yang2jsobj] defining #{ref.tag} using #{schema.trail}"
-          definitions[ref.tag] = true
-          definitions[ref.tag] = yang2jsobj ref.state.grouping.origin
+        unless definitions["#{origin}:#{ref.tag}"]?
+          debug? "[yang2jsobj] defining #{origin}:#{ref.tag} using #{schema.trail}"
+          definitions["#{origin}:#{ref.tag}"] = true
+          definitions["#{origin}:#{ref.tag}"] = yang2jsobj ref.state.grouping.origin
 
       if refs.length > 1 or property.length
-        js.allOf = refs.map (ref) -> '$ref': "#/definitions/#{ref.tag}"
+        js.allOf = refs.map (ref) -> '$ref': "#/definitions/#{origin}:#{ref.tag}"
         if property.length
           js.allOf.push
             required: if required.length then required else undefined
@@ -79,7 +80,7 @@ yang2jsobj = (schema) ->
           js.allOf.push choices...
       else
         ref = refs[0]
-        js['$ref'] = "#/definitions/#{ref.tag}"
+        js['$ref'] = "#/definitions/#{origin}:#{ref.tag}"
     when choices?.length
       if choices.length > 1 or property.length
         js.allOf = [].concat choices
